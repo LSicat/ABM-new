@@ -3,7 +3,15 @@ globals [ max-sheep ]  ; don't let sheep population grow too large
 breed [ sheep a-sheep ]  ; sheep is its own plural, so we use "a-sheep" as the singular.
 breed [ wolves wolf ]
 turtles-own [ energy ]       ; both wolves and sheep have energy
-sheep-own [resistance resistance2 resistance3 lifespan]
+sheep-own [
+  resistance resistance2
+  lifespan
+  penicillin_resistance
+  cephalosporin_resistance
+  macrolide_resistance
+  fluoroquinolone_resistance
+  growth_bonus
+]
 patches-own [ countdown ]
 
 to setup
@@ -19,26 +27,9 @@ to setup
   ask patches with [pxcor >= 13]                    [set pcolor 2]
   ask patches with [pxcor >= 19.5]                    [set pcolor 2.5]
 
-
-
-
   ifelse netlogo-web? [set max-sheep 10000] [set max-sheep 10000]
 
-  ; Check model-version switch
-  ; if we're not modeling grass, then the sheep don't need to eat to survive
-  ; otherwise the grass's state of growth and growing logic need to be set up
-  ifelse model-version = "sheep-wolves-grass" [
-    ask patches [
-      set pcolor one-of [ green brown ]
-      ifelse pcolor = green
-        [ set countdown grass-regrowth-time ]
-      [ set countdown random grass-regrowth-time ] ; initialize grass regrowth clocks randomly for brown patches
-    ]
-  ]
-  [
-
-  ]
-  ask n-of initial-number-sheep patches [ sprout-sheep 1
+  ask n-of initial-number-bacteria patches [ sprout-sheep 1
 
     [
     set shape  "circle 2"
@@ -46,22 +37,11 @@ to setup
 
     set size 1  ; easier to see
     set label-color blue - 2
-    set energy random (2 * sheep-gain-from-food)
     set lifespan 100
     setxy random-xcor random-ycor
     set resistance 0
     ]
   ]
-
-  create-wolves initial-number-wolves  ; create the wolves, then initialize their variables
-  [
-    set shape "circle"
-    set color white
-    set size 1.5  ; easier to see
-    set energy random (2 * wolf-gain-from-food)
-    setxy random-xcor random-ycor
-  ]
-  display-labels
   reset-ticks
 end
 
@@ -77,36 +57,16 @@ to go
     reproduce-sheep
     lifespan_check
   ]
-  ;ask wolves [
-  ;  move
-  ;  eat-sheep ; wolves eat a sheep on their patch
-  ;  death ; wolves die if our of energy
-  ;]
-  ;if model-version = "sheep-wolves-grass" [ ask patches [ grow-grass ] ]
-  ; set grass count patches with [pcolor = green]
   tick
-  display-labels
+
 end
 
 to move  ; turtle procedure
 
 end
 
-
-
-to eat-grass  ; sheep procedure
-  ; sheep eat grass, turn the patch brown
-  if pcolor = green [
-    set pcolor brown
-    set energy energy + sheep-gain-from-food  ; sheep gain energy by eating
-  ]
-end
-
 to reproduce-sheep  ; sheep procedure
-
-
-  if random-float 1000 < sheep-reproduce [  ; throw "dice" to see if you will reproduce
-    set energy (energy / 2)                ; divide energy between parent and offspring
+  if random-float 1000 < (sheep-reproduce + growth_bonus) [  ; throw "dice" to see if you will reproduce
     let empty-patches2 neighbors with [not any? turtles-here]
     if any? empty-patches2
     [
@@ -115,58 +75,10 @@ to reproduce-sheep  ; sheep procedure
       face target
       move-to target
       set lifespan 200
-
+      set color color + resistance
       mutate
       ]   ; hatch an offspring and move it forward 1 step
     ]
-  ]
-end
-
-to reproduce-wolves  ; wolf procedure
-  if random-float 100 < wolf-reproduce [  ; throw "dice" to see if you will reproduce
-    set energy (energy / 2)               ; divide energy between parent and offspring
-    hatch 1 [ rt random-float 360 fd 1
-
-    ]  ; hatch an offspring and move it forward 1 step
-  ]
-end
-
-to eat-sheep  ; wolf procedure
-  let prey one-of sheep-here                    ; grab a random sheep
-  if prey != nobody  [                          ; did we get one?  if so,
-    ask prey [ die ]                            ; kill it, and...
-    set energy energy + wolf-gain-from-food     ; get energy from eating
-  ]
-end
-
-to death  ; turtle procedure (i.e. both wolf nd sheep procedure)
-  ; when energy dips below zero, die
-  if energy < 0 [ die ]
-end
-
-to grow-grass  ; patch procedure
-  ; countdown on brown patches: if reach 0, grow some grass
-  if pcolor = brown [
-    ifelse countdown <= 0
-      [ set pcolor green
-        set countdown grass-regrowth-time ]
-      [ set countdown countdown - 1 ]
-  ]
-end
-
-to-report grass
-  ifelse model-version = "sheep-wolves-grass" [
-    report patches with [pcolor = green]
-  ]
-  [ report 0 ]
-end
-
-
-to display-labels
-  ask turtles [ set label "" ]
-  if show-energy? [
-    ask wolves [ set label round energy ]
-    if model-version = "sheep-wolves-grass" [ ask sheep [ set label round energy ] ]
   ]
 end
 
@@ -177,10 +89,48 @@ end
 
 to mutate
 
-  let choice random 3
-  if choice = 1 [set resistance resistance + random 2]
-  if choice = 2 [set resistance2 resistance2 + random 2]
-  if choice = 3 [set resistance3 resistance3 + random 2]
+  let choice random 12
+  if choice = 1 [
+    set resistance resistance + random 4
+    set growth_bonus growth_bonus - random 2
+  ]
+  if choice = 2 [
+    set fluoroquinolone_resistance fluoroquinolone_resistance + random 4
+    set growth_bonus growth_bonus - random 2
+  ]
+  if choice = 3 [
+    set penicillin_resistance penicillin_resistance + random 4
+    set growth_bonus growth_bonus - random 2
+  ]
+  if choice = 4 [
+    set cephalosporin_resistance cephalosporin_resistance + random 4
+    set growth_bonus growth_bonus - random 2
+  ]
+  if choice = 5 [
+    set macrolide_resistance macrolide_resistance + random 4
+    set growth_bonus growth_bonus - random 2
+  ]
+
+  if choice = 6 [
+    set resistance resistance - random 4
+    set growth_bonus growth_bonus + random 2
+  ]
+  if choice = 7 [
+    set fluoroquinolone_resistance fluoroquinolone_resistance - random 4
+    set growth_bonus growth_bonus + random 2
+  ]
+  if choice = 8 [
+    set penicillin_resistance penicillin_resistance - random 4
+    set growth_bonus growth_bonus + random 2
+  ]
+  if choice = 9 [
+    set cephalosporin_resistance cephalosporin_resistance - random 4
+    set growth_bonus growth_bonus + random 2
+  ]
+  if choice = 10 [
+    set macrolide_resistance macrolide_resistance - random 4
+    set growth_bonus growth_bonus + random 2
+  ]
 
 end
 
@@ -207,20 +157,41 @@ to antibiotic_1
   ]
 end
 
-to antibiotic_2
+to penicillin_dose
   ask sheep
   [
-    if random-float 100 < 90 - resistance2 [die]
-    if random-float 100 < 90 - resistance2 [die]
-    if random-float 100 < 90 - resistance2 [die]
+    if random-float 100 < 90 - penicillin_resistance [die]
+    if random-float 100 < 90 - penicillin_resistance [die]
+    if random-float 100 < 90 - penicillin_resistance [die]
+  ]
+end
+
+to cephalosporin_dose
+  ask sheep
+  [
+    if random-float 100 < 90 - cephalosporin_resistance [die]
+    if random-float 100 < 90 - cephalosporin_resistance [die]
+    if random-float 100 < 90 - cephalosporin_resistance [die]
 
   ]
 end
 
-to antibiotic_3
+to macrolide_dose
   ask sheep
   [
-    if random-float 100 < 90 - resistance3 [die]
+    if random-float 100 < 90 - macrolide_resistance [die]
+    if random-float 100 < 90 - macrolide_resistance [die]
+    if random-float 100 < 90 - macrolide_resistance [die]
+
+  ]
+end
+
+to fluoroquinolone_dose
+  ask sheep
+  [
+    if random-float 100 < 90 - fluoroquinolone_resistance [die]
+    if random-float 100 < 90 - fluoroquinolone_resistance [die]
+    if random-float 100 < 90 - fluoroquinolone_resistance [die]
 
   ]
 end
@@ -239,8 +210,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 -25
 25
@@ -251,21 +222,6 @@ GRAPHICS-WINDOW
 1
 ticks
 30.0
-
-SLIDER
-5
-60
-179
-93
-initial-number-sheep
-initial-number-sheep
-0
-250
-79.0
-1
-1
-NIL
-HORIZONTAL
 
 SLIDER
 5
@@ -297,71 +253,11 @@ sheep-reproduce
 %
 HORIZONTAL
 
-SLIDER
-185
-60
-350
-93
-initial-number-wolves
-initial-number-wolves
-0
-250
-0.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-183
-195
-348
-228
-wolf-gain-from-food
-wolf-gain-from-food
-0.0
-100.0
-100.0
-1.0
-1
-NIL
-HORIZONTAL
-
-SLIDER
-183
-231
-348
-264
-wolf-reproduce
-wolf-reproduce
-0.0
-20.0
-4.0
-1.0
-1
-%
-HORIZONTAL
-
-SLIDER
-40
-100
-252
-133
-grass-regrowth-time
-grass-regrowth-time
-0
-100
-30.0
-1
-1
-NIL
-HORIZONTAL
-
 BUTTON
-40
-140
-109
-173
+15
+100
+84
+133
 setup
 setup
 NIL
@@ -375,10 +271,10 @@ NIL
 1
 
 BUTTON
-115
-140
-190
-173
+105
+100
+180
+133
 go
 go
 T
@@ -407,89 +303,24 @@ true
 true
 "" ""
 PENS
-"sheep" 1.0 0 -612749 true "" "plot count sheep"
-"wolves" 1.0 0 -16449023 true "" "plot count wolves"
-"grass / 4" 1.0 0 -10899396 true "" "if model-version = \"sheep-wolves-grass\" [ plot count grass / 4 ]"
+"bacteria" 1.0 0 -612749 true "" "plot count sheep"
 
 MONITOR
 41
 308
-111
+108
 353
-sheep
+bacteria
 count sheep
 3
 1
 11
 
-MONITOR
-115
-308
-185
-353
-wolves
-count wolves
-3
-1
-11
-
-MONITOR
-191
-308
-256
-353
-grass
-count grass / 4
-0
-1
-11
-
-TEXTBOX
-20
-178
-160
-196
-Sheep settings
-11
-0.0
-0
-
-TEXTBOX
-198
-176
-311
-194
-Wolf settings
-11
-0.0
-0
-
-SWITCH
-105
-270
-241
-303
-show-energy?
-show-energy?
-1
-1
--1000
-
-CHOOSER
-5
-10
-350
-55
-model-version
-model-version
-"sheep-wolves" "sheep-wolves-grass"
-0
-
 BUTTON
 205
-140
+65
 307
-173
+98
 NIL
 antibiotic_1
 NIL
@@ -503,12 +334,12 @@ NIL
 1
 
 BUTTON
-255
-100
-357
-133
+185
+230
+307
+263
 NIL
-antibiotic_2\n
+penicillin_dose
 NIL
 1
 T
@@ -518,6 +349,72 @@ NIL
 NIL
 NIL
 1
+
+BUTTON
+185
+270
+342
+303
+NIL
+cephalosporin_dose\n
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+185
+190
+312
+223
+NIL
+macrolide_dose
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+185
+150
+352
+183
+NIL
+fluoroquinolone_dose\n
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SLIDER
+15
+20
+212
+53
+initial-number-bacteria
+initial-number-bacteria
+0
+1000
+516.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
