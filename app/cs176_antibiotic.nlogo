@@ -1,18 +1,16 @@
 globals [ max-sheep ]  ; don't let sheep population grow too large
-; Sheep and wolves are both breeds of turtle.
+
 breed [ sheep a-sheep ]  ; sheep is its own plural, so we use "a-sheep" as the singular.
-breed [ wolves wolf ]
+
 turtles-own [ energy ]       ; both wolves and sheep have energy
 sheep-own [
-  resistance resistance2
   lifespan
   penicillin_resistance
   cephalosporin_resistance
   macrolide_resistance
   fluoroquinolone_resistance
-  growth_bonus
 ]
-patches-own [ countdown ]
+patches-own [  ]
 
 to setup
   clear-all
@@ -33,13 +31,12 @@ to setup
 
     [
     set shape  "circle 2"
-    set color one-of base-colors
+    set color [255 255 255]
 
     set size 1  ; easier to see
     set label-color blue - 2
-    set lifespan 100
+    set lifespan bacteria_lifespan
     setxy random-xcor random-ycor
-    set resistance 0
     ]
   ]
   reset-ticks
@@ -50,11 +47,12 @@ to go
   if not any? turtles [ stop ]
 
   ; stop the model if there are no wolves and the number of sheep gets very large
-  if not any? wolves and count sheep > max-sheep [ user-message "The sheep have inherited the earth" stop ]
+  if count sheep > max-sheep [ user-message "The bacteria have inherited the earth" stop ]
   ask sheep [
     move
     antibiotic_check
     reproduce-sheep
+    transfer-dna
     lifespan_check
   ]
   tick
@@ -66,7 +64,7 @@ to move  ; turtle procedure
 end
 
 to reproduce-sheep  ; sheep procedure
-  if random-float 1000 < (sheep-reproduce + growth_bonus) [  ; throw "dice" to see if you will reproduce
+  if random-float 1000 < sheep-reproduce [  ; throw "dice" to see if you will reproduce
     let empty-patches2 neighbors with [not any? turtles-here]
     if any? empty-patches2
     [
@@ -74,9 +72,20 @@ to reproduce-sheep  ; sheep procedure
       let target one-of empty-patches2
       face target
       move-to target
-      set lifespan 200
-      set color color + resistance
+      set lifespan bacteria_lifespan
+
       mutate
+
+      if penicillin_resistance > fluoroquinolone_resistance and penicillin_resistance > cephalosporin_resistance and penicillin_resistance > macrolide_resistance
+        [set color red  ]
+      if fluoroquinolone_resistance > penicillin_resistance and fluoroquinolone_resistance > cephalosporin_resistance and fluoroquinolone_resistance > macrolide_resistance
+        [set color blue ]
+      if cephalosporin_resistance > fluoroquinolone_resistance and cephalosporin_resistance > penicillin_resistance and cephalosporin_resistance > macrolide_resistance
+        [set color yellow ]
+      if macrolide_resistance > penicillin_resistance and macrolide_resistance > fluoroquinolone_resistance and macrolide_resistance > cephalosporin_resistance
+        [set color green ]
+
+
       ]   ; hatch an offspring and move it forward 1 step
     ]
   ]
@@ -87,73 +96,119 @@ to lifespan_check
   if lifespan < 0 [die]
 end
 
-to mutate
+to transfer-dna
+  let transfer? random 2
 
-  let choice random 12
+  if transfer? = 1 [
+    let transfer_type random 4
+    if any? (turtles-on neighbors)[
+      ask one-of (turtles-on neighbors)[
+      if transfer_type = 0 [
+        set fluoroquinolone_resistance [fluoroquinolone_resistance] of myself
+
+      ]
+
+      if transfer_type = 1 [
+        set penicillin_resistance [fluoroquinolone_resistance] of myself
+
+      ]
+
+      if transfer_type = 2 [
+        set cephalosporin_resistance [fluoroquinolone_resistance] of myself
+
+      ]
+
+      if transfer_type = 3 [
+        set macrolide_resistance [fluoroquinolone_resistance] of myself
+
+      ]
+    ]
+
+    ]
+  ]
+end
+
+to mutate
+  let choice random 9
   if choice = 1 [
-    set resistance resistance + random 4
-    set growth_bonus growth_bonus - random 2
+    set fluoroquinolone_resistance fluoroquinolone_resistance + random 4
   ]
   if choice = 2 [
-    set fluoroquinolone_resistance fluoroquinolone_resistance + random 4
-    set growth_bonus growth_bonus - random 2
+    set penicillin_resistance penicillin_resistance + random 4
   ]
   if choice = 3 [
-    set penicillin_resistance penicillin_resistance + random 4
-    set growth_bonus growth_bonus - random 2
+    set cephalosporin_resistance cephalosporin_resistance + random 4
   ]
   if choice = 4 [
-    set cephalosporin_resistance cephalosporin_resistance + random 4
-    set growth_bonus growth_bonus - random 2
+    set macrolide_resistance macrolide_resistance + random 4
   ]
   if choice = 5 [
-    set macrolide_resistance macrolide_resistance + random 4
-    set growth_bonus growth_bonus - random 2
+    set fluoroquinolone_resistance fluoroquinolone_resistance - random 4
   ]
-
   if choice = 6 [
-    set resistance resistance - random 4
-    set growth_bonus growth_bonus + random 2
+    set penicillin_resistance penicillin_resistance - random 4
   ]
   if choice = 7 [
-    set fluoroquinolone_resistance fluoroquinolone_resistance - random 4
-    set growth_bonus growth_bonus + random 2
+    set cephalosporin_resistance cephalosporin_resistance - random 4
   ]
   if choice = 8 [
-    set penicillin_resistance penicillin_resistance - random 4
-    set growth_bonus growth_bonus + random 2
-  ]
-  if choice = 9 [
-    set cephalosporin_resistance cephalosporin_resistance - random 4
-    set growth_bonus growth_bonus + random 2
-  ]
-  if choice = 10 [
     set macrolide_resistance macrolide_resistance - random 4
-    set growth_bonus growth_bonus + random 2
   ]
 
 end
 
 to antibiotic_check
-  if pcolor = 1 [
-    if random-float 100 < 90 - resistance [die]
-  ]
-  if pcolor = 1.5 [
-    if random-float 100 < 60 - resistance [die]
-  ]
-  if pcolor = 2 [
-    if random-float 100 < 20 - resistance [die]
-  ]
-end
 
-
-to antibiotic_1
-  ask sheep
+  if petri_dish_antibiotic = "penicillin"
   [
-    if random-float 100 < 90 - resistance [die]
-    if random-float 100 < 90 - resistance [die]
-    if random-float 100 < 90 - resistance [die]
+    if pcolor = 1 [
+      if random-float 100 < 90 - penicillin_resistance [die]
+    ]
+    if pcolor = 1.5 [
+      if random-float 100 < 60 - penicillin_resistance [die]
+    ]
+    if pcolor = 2 [
+      if random-float 100 < 20 - penicillin_resistance [die]
+    ]
+  ]
 
+  if petri_dish_antibiotic = "fluoroquinolone"
+  [
+    if pcolor = 1 [
+      if random-float 100 < 90 - fluoroquinolone_resistance [die]
+    ]
+    if pcolor = 1.5 [
+      if random-float 100 < 60 - fluoroquinolone_resistance [die]
+    ]
+    if pcolor = 2 [
+      if random-float 100 < 20 - fluoroquinolone_resistance [die]
+    ]
+  ]
+
+  if petri_dish_antibiotic = "macrolide"
+  [
+    if pcolor = 1 [
+      if random-float 100 < 90 - macrolide_resistance [die]
+    ]
+    if pcolor = 1.5 [
+      if random-float 100 < 60 - macrolide_resistance [die]
+    ]
+    if pcolor = 2 [
+      if random-float 100 < 20 - macrolide_resistance [die]
+    ]
+  ]
+
+  if petri_dish_antibiotic = "cephalosporin"
+  [
+    if pcolor = 1 [
+      if random-float 100 < 90 - cephalosporin_resistance [die]
+    ]
+    if pcolor = 1.5 [
+      if random-float 100 < 60 - cephalosporin_resistance [die]
+    ]
+    if pcolor = 2 [
+      if random-float 100 < 20 - cephalosporin_resistance [die]
+    ]
   ]
 end
 
@@ -222,21 +277,6 @@ GRAPHICS-WINDOW
 1
 ticks
 30.0
-
-SLIDER
-5
-196
-179
-229
-sheep-gain-from-food
-sheep-gain-from-food
-0.0
-50.0
-6.0
-1.0
-1
-NIL
-HORIZONTAL
 
 SLIDER
 5
@@ -315,23 +355,6 @@ count sheep
 3
 1
 11
-
-BUTTON
-205
-65
-307
-98
-NIL
-antibiotic_1
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
 
 BUTTON
 185
@@ -415,6 +438,41 @@ initial-number-bacteria
 1
 NIL
 HORIZONTAL
+
+SLIDER
+15
+55
+187
+88
+bacteria_lifespan
+bacteria_lifespan
+0
+1000
+109.0
+1
+1
+NIL
+HORIZONTAL
+
+CHOOSER
+15
+150
+162
+195
+petri_dish_antibiotic
+petri_dish_antibiotic
+"fluoroquinolone" "macrolide" "penicillin" "cephalosporin"
+2
+
+TEXTBOX
+390
+535
+420
+553
+side
+11
+0.0
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
