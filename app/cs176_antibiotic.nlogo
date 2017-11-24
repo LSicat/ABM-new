@@ -16,14 +16,16 @@ to setup
   clear-all
   reset-ticks
 
-  ask patches with [pxcor >= -26]                    [set pcolor 2.5]
-  ask patches with [pxcor >= -19.5]                    [set pcolor 2]
-  ask patches with [pxcor >= -13]                    [set pcolor 1.5]
-  ask patches with [pxcor >= -6.5]                    [set pcolor 1]
-  ask patches with [pxcor >= 0]                    [set pcolor 1]
-  ask patches with [pxcor >= 6.5]                    [set pcolor 1.5]
-  ask patches with [pxcor >= 13]                    [set pcolor 2]
-  ask patches with [pxcor >= 19.5]                    [set pcolor 2.5]
+  ask patches with [pxcor >= 0]                    [set pcolor 5]
+  ask patches with [pxcor >= 10]                    [set pcolor 4]
+  ask patches with [pxcor >= 20]                    [set pcolor 3]
+  ask patches with [pxcor >= 30]                    [set pcolor 2]
+  ask patches with [pxcor >= 40]                    [set pcolor 1]
+  ask patches with [pxcor >= 50]                    [set pcolor 2]
+  ask patches with [pxcor >= 60]                    [set pcolor 3]
+  ask patches with [pxcor >= 70]                    [set pcolor 4]
+  ask patches with [pxcor >= 80]                    [set pcolor 5]
+
 
   ifelse netlogo-web? [set max-sheep 10000] [set max-sheep 10000]
 
@@ -97,7 +99,7 @@ to lifespan_check
 end
 
 to transfer-dna
-  let transfer? random 2
+  let transfer? random 20
 
   if transfer? = 1 [
     let transfer_type random 4
@@ -162,26 +164,30 @@ to antibiotic_check
   if petri_dish_antibiotic = "penicillin"
   [
     if pcolor = 1 [
-      if random-float 100 < 90 - penicillin_resistance [die]
-    ]
-    if pcolor = 1.5 [
-      if random-float 100 < 60 - penicillin_resistance [die]
+      if random-float 100 < 80 - penicillin_resistance [die]
     ]
     if pcolor = 2 [
+      if random-float 100 < 60 - penicillin_resistance [die]
+    ]
+    if pcolor = 3 [
+      if random-float 100 < 40 - penicillin_resistance [die]
+    ]
+    if pcolor = 4 [
       if random-float 100 < 20 - penicillin_resistance [die]
     ]
+
   ]
 
   if petri_dish_antibiotic = "fluoroquinolone"
   [
     if pcolor = 1 [
-      if random-float 100 < 90 - fluoroquinolone_resistance [die]
+      if random-float 100 < 300 - fluoroquinolone_resistance [die]
     ]
     if pcolor = 1.5 [
-      if random-float 100 < 60 - fluoroquinolone_resistance [die]
+      if random-float 100 < 30 - fluoroquinolone_resistance [die]
     ]
     if pcolor = 2 [
-      if random-float 100 < 20 - fluoroquinolone_resistance [die]
+      if random-float 100 < 3 - fluoroquinolone_resistance [die]
     ]
   ]
 
@@ -254,7 +260,7 @@ end
 GRAPHICS-WINDOW
 355
 10
-873
+1273
 529
 -1
 -1
@@ -268,10 +274,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--25
-25
--25
-25
+0
+90
+0
+50
 1
 1
 1
@@ -358,9 +364,9 @@ count sheep
 
 BUTTON
 185
-230
+275
 307
-263
+308
 NIL
 penicillin_dose
 NIL
@@ -375,9 +381,9 @@ NIL
 
 BUTTON
 185
-270
+315
 342
-303
+348
 NIL
 cephalosporin_dose\n
 NIL
@@ -392,9 +398,9 @@ NIL
 
 BUTTON
 185
-190
+235
 312
-223
+268
 NIL
 macrolide_dose
 NIL
@@ -409,9 +415,9 @@ NIL
 
 BUTTON
 185
-150
+195
 352
-183
+228
 NIL
 fluoroquinolone_dose\n
 NIL
@@ -465,11 +471,21 @@ petri_dish_antibiotic
 2
 
 TEXTBOX
-390
-535
 420
-553
-side
+535
+1240
+561
+0                        3                              30                              300                        3000                              300                        30                               3                        0\n
+11
+0.0
+1
+
+TEXTBOX
+210
+50
+360
+195
+The highest resistance determines the color\n\nRed = Penicillin resistance\nGreen = Macrolide resistance\nBlue = Fluoroquinolone resistance\nYellow = Cephalosporin resistance
 11
 0.0
 1
